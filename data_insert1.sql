@@ -1,22 +1,21 @@
 -- Effective_Timeline
-INSERT INTO Effective_Timeline (Effective_from, Effective_to) VALUES
-('2022-04-01', '2023-03-31'),
-('2023-04-01', '2024-03-31');
+-- INSERT INTO Effective_Timeline (Effective_from, Effective_to) VALUES
+-- ('2022-04-01', '2023-03-31'),
+-- ('2023-04-01', '2024-03-31');
 
--- Slab_range
-INSERT INTO Slab_range (Minimum_Income, Maximum_Income) VALUES
-(0.00, 250000.00),
-(250001.00, 500000.00),
-(500001.00, 1000000.00),
-(1000001.00, 1500000.00);
+-- -- Slab_range
+-- INSERT INTO Slab_range (Minimum_Income, Maximum_Income) VALUES
+-- (0.00, 250000.00),
+-- (250001.00, 500000.00),
+-- (500001.00, 1000000.00),
+-- (1000001.00, 1500000.00);
 
 -- Slabs
-INSERT INTO Slabs (Slab_ID, Minimum_Income, Tax_Rate, CESS_Rate, Effective_from) VALUES
-(1, 0.00, 0.00, 0.00, '2022-04-01'),
-(2, 250001.00, 5.00, 4.00, '2022-04-01'),
-(3, 500001.00, 10.00, 4.00, '2022-04-01'),
-(4, 1000001.00, 20.00, 4.00, '2022-04-01');
-
+INSERT INTO Slabs (Slab_ID, Minimum_Income, Maximum_Income, Tax_Rate, CESS_Rate, Effective_from,Effective_to) VALUES
+(1, 0.00, 250000.00,0.00, 0.00, 2022,2023),
+(2, 250001.00, 500000.00,5.00, 4.00, 2022,2023),
+(3, 500001.00, 1000000.00,10.00, 4.00,2022,2023),
+(4, 1000001.00, 1500000.00,20.00, 4.00, 2022,2023);
 -- Assessee
 INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN) VALUES
 ('ABCDE1234F', '123 Main St, City', '1234567890', 'Filed', NULL),
@@ -75,14 +74,14 @@ INSERT INTO Goods (TCS_Certificate_Number, Goods_Type) VALUES
 (2001, 'Electronics'),
 (2001, 'Furniture');
 
--- Corresponding_year
+--Corresponding_year
 INSERT INTO Corresponding_year (Start_Year, End_Year) VALUES
 (2022, 2023),
 (2023, 2024);
 
 -- ITR
-INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Taxable_Income, Total_Tax_Paid, Status) VALUES
-(3001, 'ABCDE1234F', 33, 'Individual', '2022-07-01', 'New', '2023-07-31', 2022, 1000000.00, 105000.00, 'Processed');
+INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year,Total_Taxable_Income, Total_Tax_Paid, Status) VALUES
+(3001, 'ABCDE1234F', 33, 'Individual', '2022-07-01', 'New', '2023-07-31', 2022,2023, 1000000.00, 105000.00, 'Processed');
 
 -- Is_penaliser
 INSERT INTO Is_penaliser (Penalty, PAN) VALUES
@@ -93,7 +92,7 @@ INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID) VALUES
 (3001, 3);
 
 -- Income_Details
-INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year, Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
+INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
 (3001, 'ABCDE1234F', 2022, 800000.00, 50000.00, 20000.00, 10000.00, 5000.00, 10000.00);
 
 -- Other_Income
@@ -127,3 +126,107 @@ INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Statu
 -- Refund_details
 INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
 (3001, 0.00, 'No Refund');
+
+DELIMITER $$
+
+CREATE PROCEDURE calculate_slabs_for_itr(ack_no INT)
+BEGIN
+    DECLARE net_income DECIMAL(15, 2);
+    DECLARE total_deduction DECIMAL(15, 2) DEFAULT 0;
+    DECLARE remaining_income DECIMAL(15, 2);
+    DECLARE slab_amount DECIMAL(15, 2);
+    DECLARE slabid INT ;  
+    DECLARE min_income DECIMAL(15, 2);
+    DECLARE max_income DECIMAL(15, 2);
+    DECLARE done INT DEFAULT 0;
+
+    -- Declare a cursor for iterating over slabs
+    DECLARE slab_cursor CURSOR FOR
+        SELECT Slab_ID, Minimum_Income, Maximum_Income
+        FROM Slabs
+        WHERE Effective_from <= (SELECT Start_Year FROM ITR WHERE Acknowledgement_Number = ack_no)
+        AND Effective_to >= (SELECT End_Year FROM ITR WHERE Acknowledgement_Number = ack_no);
+
+    -- Declare continue handler for the cursor
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    -- Calculate total deductions for the given ack_no
+    SELECT COALESCE(SUM(Deduction_Amount), 0)
+    INTO total_deduction
+    FROM Deduction
+    WHERE Acknowledgement_Number = ack_no;
+
+    -- Get total income from the Income_Details table
+    SELECT Total_income
+    INTO net_income
+    FROM Income_Details
+    WHERE Acknowledgement_Number = ack_no;
+
+    -- Subtract deductions to calculate net income
+    SET net_income = net_income - total_deduction;
+    SET remaining_income = net_income;
+
+    -- Open the cursor
+    OPEN slab_cursor;
+
+    -- Loop through the slabs
+    read_loop: LOOP
+        FETCH slab_cursor INTO slabid, min_income, max_income;
+
+        -- Exit the loop when there are no more rows to fetch
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- For each slab, calculate the applicable amount
+        IF remaining_income > 0 THEN
+            -- Determine the slab amount based on remaining income
+            IF remaining_income >= (max_income - min_income) THEN
+                SET slab_amount = max_income - min_income;
+                SET remaining_income = remaining_income - slab_amount;
+            ELSE
+                SET slab_amount = remaining_income;
+                SET remaining_income = 0;
+            END IF;
+
+            -- Insert the record into Corresponding_Slabs
+            INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID, Amount)
+            VALUES (ack_no, slabid, slab_amount);
+        END IF;
+
+    END LOOP;
+
+    -- Close the cursor
+    CLOSE slab_cursor;
+
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER after_itr_insert
+AFTER INSERT ON Income_Details
+FOR EACH ROW
+BEGIN
+    -- Call the stored procedure to calculate slabs for the inserted ack_no
+    CALL calculate_slabs_for_itr(NEW.Acknowledgement_Number);
+END$$
+
+DELIMITER ;
+
+
+
+DELIMITER $$
+
+CREATE TRIGGER update_total_income_before_insert
+BEFORE INSERT ON Income_Details
+FOR EACH ROW
+BEGIN
+    -- Calculate the Total_income before the insert
+    SET NEW.Total_income = NEW.Salary_Income + NEW.Business_Income + NEW.Capital_Gain +
+                           NEW.House_Property_Income + NEW.Agriculture_Income + NEW.Other_Income_Total;
+END$$
+
+DELIMITER ;

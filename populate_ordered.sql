@@ -3,26 +3,28 @@ CREATE DATABASE IF NOT EXISTS Taxation_System;
 USE Taxation_System;
 
 -- Base table for Effective Timeline
-CREATE TABLE IF NOT EXISTS Effective_Timeline (
-    Effective_from DATE PRIMARY KEY,
-    Effective_to DATE
-);
+-- CREATE TABLE IF NOT EXISTS Effective_Timeline (
+--     Effective_from DATE PRIMARY KEY,
+--     Effective_to DATE
+-- );
 
 -- Base table for Slab Range
-CREATE TABLE IF NOT EXISTS Slab_range (
-    Minimum_Income DECIMAL(15, 2) PRIMARY KEY,
-    Maximum_Income DECIMAL(15, 2)
-);
+-- CREATE TABLE IF NOT EXISTS Slab_range (
+--     Minimum_Income DECIMAL(15, 2) PRIMARY KEY,
+--     Maximum_Income DECIMAL(15, 2)
+-- );
 
 -- Slabs Table depending on Effective Timeline and Slab Range
 CREATE TABLE IF NOT EXISTS Slabs (
     Slab_ID INT PRIMARY KEY,
     Minimum_Income DECIMAL(15, 2),
+    Maximum_Income DECIMAL(15, 2),
     Tax_Rate DECIMAL(5, 2),
     CESS_Rate DECIMAL(5, 2),
-    Effective_from DATE,
-    FOREIGN KEY (Effective_from) REFERENCES Effective_Timeline(Effective_from),
-    FOREIGN KEY (Minimum_Income) REFERENCES Slab_range(Minimum_Income)
+    Effective_from YEAR,
+    Effective_to YEAR
+    -- FOREIGN KEY (Effective_from) REFERENCES Effective_Timeline(Effective_from),
+
 );
 
 -- Assessee Table
@@ -175,6 +177,7 @@ CREATE TABLE IF NOT EXISTS ITR (
     Regime VARCHAR(50),
     Due_Date DATE,
     Start_Year YEAR,
+    End_Year YEAR,
     Total_Taxable_Income DECIMAL(15, 2),
     Total_Tax_Paid DECIMAL(15, 2),
     Status VARCHAR(20),
@@ -188,9 +191,10 @@ ADD FOREIGN KEY (PAN) REFERENCES ITR(PAN);
 CREATE TABLE IF NOT EXISTS Corresponding_Slabs (
     Acknowledgement_Number INT,
     Slab_ID INT,
+    Amount DECIMAL(15, 2),
     PRIMARY KEY (Acknowledgement_Number, Slab_ID),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
-    FOREIGN KEY (Slab_ID) REFERENCES Slabs(Slab_ID)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number)
+    -- FOREIGN KEY (Slab_ID) REFERENCES Slabs(Slab_ID)
 );
 
 
@@ -205,6 +209,7 @@ CREATE TABLE IF NOT EXISTS Income_Details (
     House_Property_Income DECIMAL(15, 2),
     Agriculture_Income DECIMAL(15, 2),
     Other_Income_Total DECIMAL(15, 2),
+    Total_income DECIMAL(15, 2), -- salary_income + business_income + capital_gain + house_property_income + agriculture_income + other_income_total
     PRIMARY KEY (Acknowledgement_Number),
     FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
     FOREIGN KEY (PAN) REFERENCES Assessee(PAN),
@@ -277,6 +282,5 @@ CREATE TABLE IF NOT EXISTS Refund_details (
     Refund_status VARCHAR(20),
     FOREIGN KEY (Acknowledgement_Number) REFERENCES Tax_Verification(Acknowledgement_Number)
 );
-
 
 
