@@ -139,6 +139,7 @@ BEGIN
     DECLARE min_income DECIMAL(15, 2);
     DECLARE max_income DECIMAL(15, 2);
     DECLARE done INT DEFAULT 0;
+    
 
     -- Declare a cursor for iterating over slabs
     DECLARE slab_cursor CURSOR FOR
@@ -146,10 +147,12 @@ BEGIN
         FROM Slabs
         WHERE Effective_from <= (SELECT Start_Year FROM ITR WHERE Acknowledgement_Number = ack_no)
         AND Effective_to >= (SELECT End_Year FROM ITR WHERE Acknowledgement_Number = ack_no);
+      
+
 
     -- Declare continue handler for the cursor
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
-
+      DELETE FROM Corresponding_Slabs WHERE Acknowledgement_Number = ack_no;
     -- Calculate total deductions for the given ack_no
     SELECT COALESCE(SUM(Deduction_Amount), 0)
     INTO total_deduction
@@ -204,17 +207,17 @@ END$$
 DELIMITER ;
 
 
-DELIMITER $$
+-- DELIMITER $$
 
-CREATE TRIGGER after_itr_insert
-AFTER INSERT ON Income_Details
-FOR EACH ROW
-BEGIN
-    -- Call the stored procedure to calculate slabs for the inserted ack_no
-    CALL calculate_slabs_for_itr(NEW.Acknowledgement_Number);
-END$$
+-- CREATE TRIGGER after_itr_insert
+-- AFTER INSERT ON Income_Details
+-- FOR EACH ROW
+-- BEGIN
+--     -- Call the stored procedure to calculate slabs for the inserted ack_no
+--     CALL calculate_slabs_for_itr(NEW.Acknowledgement_Number);
+-- END$$
 
-DELIMITER ;
+-- DELIMITER ;
 
 
 
@@ -227,6 +230,135 @@ BEGIN
     -- Calculate the Total_income before the insert
     SET NEW.Total_income = NEW.Salary_Income + NEW.Business_Income + NEW.Capital_Gain +
                            NEW.House_Property_Income + NEW.Agriculture_Income + NEW.Other_Income_Total;
+END$$
+
+DELIMITER ;
+DELIMITER $$
+
+CREATE TRIGGER update_total_income_before_update
+BEFORE UPDATE ON Income_Details
+FOR EACH ROW
+BEGIN
+    -- Calculate the Total_income before the insert
+    SET NEW.Total_income = NEW.Salary_Income + NEW.Business_Income + NEW.Capital_Gain +
+                           NEW.House_Property_Income + NEW.Agriculture_Income + NEW.Other_Income_Total;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE PROCEDURE calculate_total_tax(IN ack_no INT)
+BEGIN
+    DECLARE total_slab_tax DECIMAL(15, 2) DEFAULT 0;
+    DECLARE tcs_amount DECIMAL(15, 2) DEFAULT 0;
+    DECLARE tds_amount DECIMAL(15, 2) DEFAULT 0;
+    DECLARE total_tax DECIMAL(15, 2) DEFAULT 0;
+    DECLARE pan_card VARCHAR(15);
+    DECLARE itr_start_year YEAR;
+    DECLARE itr_end_year YEAR;
+    DECLARE bankaccountnumber VARCHAR(20);
+    DECLARE ifsccode VARCHAR(11);
+    DECLARE requesteddate DATE;
+    DECLARE taxpaid DECIMAL(15, 2);
+
+    -- Fetch PAN, Start_Year, End_Year, Requested_Date, and Tax_Paid from the ITR table
+    SELECT PAN, Start_Year, End_Year, Submission_Date, Total_Tax_Paid
+    INTO pan_card, itr_start_year, itr_end_year, requesteddate, taxpaid
+    FROM ITR
+    WHERE Acknowledgement_Number = ack_no;
+
+    -- Call procedure to calculate slabs
+    CALL calculate_slabs_for_itr(ack_no);
+
+    -- Calculate tax for all slabs for the given acknowledgment number
+    SELECT 
+        SUM((Amount * Tax_Rate / 100) + ((Amount * Tax_Rate / 100) * CESS_Rate / 100)) 
+    INTO total_slab_tax
+    FROM 
+        Corresponding_Slabs cs
+    JOIN 
+        Slabs s ON cs.Slab_ID = s.Slab_ID
+    WHERE 
+        cs.Acknowledgement_Number = ack_no;
+
+    -- Fetch TCS amount for the given PAN card number and matching year range
+    SELECT COALESCE(SUM(t.TCS_Amount), 0)
+    INTO tcs_amount
+    FROM TCS AS t
+    WHERE t.PAN = pan_card
+    AND t.Start_Year >= itr_start_year
+    AND t.End_Year <= itr_end_year;
+
+    -- Fetch TDS amount for the given PAN card number and matching year range
+    SELECT COALESCE(SUM(d.TDS_Amount), 0)
+    INTO tds_amount
+    FROM TDS AS d
+    WHERE d.PAN = pan_card
+    AND d.Start_Year >= itr_start_year
+    AND d.End_Year <= itr_end_year;
+
+    -- Calculate the total tax
+    SET total_tax = total_slab_tax - tcs_amount - tds_amount;
+
+    -- Update the Total_Taxable_Income field in the ITR table
+    UPDATE ITR
+    SET Total_Taxable_Income = total_tax
+    WHERE Acknowledgement_Number = ack_no;
+
+    -- Fetch Bank Account Details for the given PAN card
+    SELECT Bank_Account_Number, IFSC
+    INTO bankaccountnumber, ifsccode
+    FROM Assessee_Bank_Details
+    WHERE PAN = pan_card;
+
+    -- Insert data into Tax_Verification table
+    INSERT INTO Tax_Verification (
+        Acknowledgement_Number,
+        Bank_Account_Number,
+        Status,
+        Start_Year,
+        Requested_Date,
+        -- Processed_Date,
+        Tax_Amount,
+        Tax_Paid,
+        IFSC_Code
+    )
+    VALUES (
+        ack_no,
+        bankaccountnumber,
+        'Pending', -- Default status
+        itr_start_year,
+        requesteddate,
+        -- CURDATE(), -- Processed_Date is current date
+        total_tax,
+        taxpaid,
+        ifsccode
+    );
+
+    -- Display the acknowledgment number and total tax
+    SELECT 
+        ack_no AS Acknowledgement_Number,  
+        total_tax AS Total_Tax;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER after_refund_status_update
+AFTER UPDATE ON Refund_details
+FOR EACH ROW
+BEGIN
+    -- Check if the Refund_status is updated to 'Done'
+    IF NEW.Refund_status = 'Done' THEN
+        -- Update the Status and Processed_Date in the Tax_Verification table
+        UPDATE Tax_Verification
+        SET Status = 'Done',
+            Processed_Date = CURDATE()
+        WHERE Acknowledgement_Number = NEW.Acknowledgement_Number;
+    END IF;
 END$$
 
 DELIMITER ;
