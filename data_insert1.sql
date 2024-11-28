@@ -216,9 +216,36 @@ END$$
 
 DELIMITER ;
 
-
-
 DELIMITER $$
+
+ -- INSERT TRIGGER FOR TAX VERIFICATION
+CREATE TRIGGER after_tax_verification_insert
+AFTER INSERT ON Tax_Verification
+FOR EACH ROW
+BEGIN
+    INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status)
+    VALUES (
+        NEW.Acknowledgement_Number,
+        ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+        'Pending' 
+    );
+END$$
+
+-- UPDATE TRIGGER FOR TAX VERIFICATION
+CREATE TRIGGER after_tax_verification_update
+AFTER UPDATE ON Tax_Verification
+FOR EACH ROW
+BEGIN
+    IF NEW.Acknowledgement_Number = OLD.Acknowledgement_Number THEN
+        UPDATE Refund_details
+        SET Refund_amount = ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+            Refund_status = 'Pending' 
+        WHERE Acknowledgement_Number = NEW.Acknowledgement_Number;
+    END IF;
+END$$
+
+-- Reset the delimiter back to the default
+DELIMITER ;
 
 CREATE TRIGGER update_total_income_before_insert
 BEFORE INSERT ON Income_Details
