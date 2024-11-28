@@ -96,7 +96,7 @@ CREATE TABLE `Bank_Transactions` (
 
 LOCK TABLES `Bank_Transactions` WRITE;
 /*!40000 ALTER TABLE `Bank_Transactions` DISABLE KEYS */;
-INSERT INTO `Bank_Transactions` VALUES (1,'Transfer','111122223333','777788889999',1000.00),(2,'Deposit',NULL,'444455556666',5000.00),(3,'Withdrawal','444455556666',NULL,2000.00);
+INSERT INTO `Bank_Transactions` VALUES (1,'Transfer','111122223333','777788889999',1000.00),(2,'Deposit',NULL,'444455556666',5000.00),(3,'Withdrawal','444455556666',NULL,2000.00),(5,'Transfer','ACC000001','ACC123456',5000.00),(6,'Transfer','ACC000002','ACC123456',3000.00),(7,'Transfer','ACC000003','ACC123456',4000.00);
 /*!40000 ALTER TABLE `Bank_Transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -138,10 +138,9 @@ DROP TABLE IF EXISTS `Corresponding_Slabs`;
 CREATE TABLE `Corresponding_Slabs` (
   `Acknowledgement_Number` int NOT NULL,
   `Slab_ID` int NOT NULL,
+  `Amount` decimal(15,2) DEFAULT NULL,
   PRIMARY KEY (`Acknowledgement_Number`,`Slab_ID`),
-  KEY `Slab_ID` (`Slab_ID`),
-  CONSTRAINT `Corresponding_Slabs_ibfk_1` FOREIGN KEY (`Acknowledgement_Number`) REFERENCES `ITR` (`Acknowledgement_Number`),
-  CONSTRAINT `Corresponding_Slabs_ibfk_2` FOREIGN KEY (`Slab_ID`) REFERENCES `Slabs` (`Slab_ID`)
+  CONSTRAINT `Corresponding_Slabs_ibfk_1` FOREIGN KEY (`Acknowledgement_Number`) REFERENCES `ITR` (`Acknowledgement_Number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -151,7 +150,7 @@ CREATE TABLE `Corresponding_Slabs` (
 
 LOCK TABLES `Corresponding_Slabs` WRITE;
 /*!40000 ALTER TABLE `Corresponding_Slabs` DISABLE KEYS */;
-INSERT INTO `Corresponding_Slabs` VALUES (3001,3);
+INSERT INTO `Corresponding_Slabs` VALUES (3001,3,NULL);
 /*!40000 ALTER TABLE `Corresponding_Slabs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -262,30 +261,6 @@ INSERT INTO `Deduction_period` VALUES (3001,'ABCDE1234F',2022);
 UNLOCK TABLES;
 
 --
--- Table structure for table `Effective_Timeline`
---
-
-DROP TABLE IF EXISTS `Effective_Timeline`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Effective_Timeline` (
-  `Effective_from` date NOT NULL,
-  `Effective_to` date DEFAULT NULL,
-  PRIMARY KEY (`Effective_from`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Effective_Timeline`
---
-
-LOCK TABLES `Effective_Timeline` WRITE;
-/*!40000 ALTER TABLE `Effective_Timeline` DISABLE KEYS */;
-INSERT INTO `Effective_Timeline` VALUES ('2022-04-01','2023-03-31'),('2023-04-01','2024-03-31');
-/*!40000 ALTER TABLE `Effective_Timeline` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `Goods`
 --
 
@@ -326,6 +301,7 @@ CREATE TABLE `ITR` (
   `Regime` varchar(50) DEFAULT NULL,
   `Due_Date` date DEFAULT NULL,
   `Start_Year` year DEFAULT NULL,
+  `End_Year` year DEFAULT NULL,
   `Total_Taxable_Income` decimal(15,2) DEFAULT NULL,
   `Total_Tax_Paid` decimal(15,2) DEFAULT NULL,
   `Status` varchar(20) DEFAULT NULL,
@@ -343,7 +319,7 @@ CREATE TABLE `ITR` (
 
 LOCK TABLES `ITR` WRITE;
 /*!40000 ALTER TABLE `ITR` DISABLE KEYS */;
-INSERT INTO `ITR` VALUES (3001,'ABCDE1234F',33,'Individual','2022-07-01','New','2023-07-31',2022,1000000.00,105000.00,'Processed');
+INSERT INTO `ITR` VALUES (3001,'ABCDE1234F',33,'Individual','2022-07-01','New','2023-07-31',2022,2023,1000000.00,105000.00,'Processed');
 /*!40000 ALTER TABLE `ITR` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -364,6 +340,7 @@ CREATE TABLE `Income_Details` (
   `House_Property_Income` decimal(15,2) DEFAULT NULL,
   `Agriculture_Income` decimal(15,2) DEFAULT NULL,
   `Other_Income_Total` decimal(15,2) DEFAULT NULL,
+  `Total_income` decimal(15,2) DEFAULT NULL,
   PRIMARY KEY (`Acknowledgement_Number`),
   KEY `PAN` (`PAN`),
   KEY `Start_Year` (`Start_Year`),
@@ -379,9 +356,45 @@ CREATE TABLE `Income_Details` (
 
 LOCK TABLES `Income_Details` WRITE;
 /*!40000 ALTER TABLE `Income_Details` DISABLE KEYS */;
-INSERT INTO `Income_Details` VALUES (3001,'ABCDE1234F',2022,800000.00,50000.00,20000.00,10000.00,5000.00,10000.00);
 /*!40000 ALTER TABLE `Income_Details` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`kiyohan`@`localhost`*/ /*!50003 TRIGGER `update_total_income_before_insert` BEFORE INSERT ON `Income_Details` FOR EACH ROW BEGIN
+    
+    SET NEW.Total_income = NEW.Salary_Income + NEW.Business_Income + NEW.Capital_Gain +
+                           NEW.House_Property_Income + NEW.Agriculture_Income + NEW.Other_Income_Total;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`kiyohan`@`localhost`*/ /*!50003 TRIGGER `after_itr_insert` AFTER INSERT ON `Income_Details` FOR EACH ROW BEGIN
+    
+    CALL calculate_slabs_for_itr(NEW.Acknowledgement_Number);
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `Individual_Assessee`
@@ -462,7 +475,7 @@ CREATE TABLE `Non_Assessee_Bank_Details` (
 
 LOCK TABLES `Non_Assessee_Bank_Details` WRITE;
 /*!40000 ALTER TABLE `Non_Assessee_Bank_Details` DISABLE KEYS */;
-INSERT INTO `Non_Assessee_Bank_Details` VALUES ('777788889999','NOPQR1234S');
+INSERT INTO `Non_Assessee_Bank_Details` VALUES ('ACC123456','NONPAN1234'),('777788889999','NOPQR1234S');
 /*!40000 ALTER TABLE `Non_Assessee_Bank_Details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -496,7 +509,7 @@ CREATE TABLE `Non_Assessee_with_PAN` (
 
 LOCK TABLES `Non_Assessee_with_PAN` WRITE;
 /*!40000 ALTER TABLE `Non_Assessee_with_PAN` DISABLE KEYS */;
-INSERT INTO `Non_Assessee_with_PAN` VALUES ('NOPQR1234S','David','Andrew','Brown','1980-12-20','M','789 Side Lane, City','6677889900','Resident','345678901234',0);
+INSERT INTO `Non_Assessee_with_PAN` VALUES ('NONPAN1234','John',NULL,'Doe',NULL,NULL,'123 Tax Lane','9876543210',NULL,NULL,1),('NOPQR1234S','David','Andrew','Brown','1980-12-20','M','789 Side Lane, City','6677889900','Resident','345678901234',0);
 /*!40000 ALTER TABLE `Non_Assessee_with_PAN` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -521,7 +534,6 @@ CREATE TABLE `Other_Income` (
 
 LOCK TABLES `Other_Income` WRITE;
 /*!40000 ALTER TABLE `Other_Income` DISABLE KEYS */;
-INSERT INTO `Other_Income` VALUES (3001,'Dividend'),(3001,'Interest Income');
 /*!40000 ALTER TABLE `Other_Income` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -580,30 +592,6 @@ INSERT INTO `Sections` VALUES (3001,'80C','80C'),(3001,'80D','80D');
 UNLOCK TABLES;
 
 --
--- Table structure for table `Slab_range`
---
-
-DROP TABLE IF EXISTS `Slab_range`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `Slab_range` (
-  `Minimum_Income` decimal(15,2) NOT NULL,
-  `Maximum_Income` decimal(15,2) DEFAULT NULL,
-  PRIMARY KEY (`Minimum_Income`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Slab_range`
---
-
-LOCK TABLES `Slab_range` WRITE;
-/*!40000 ALTER TABLE `Slab_range` DISABLE KEYS */;
-INSERT INTO `Slab_range` VALUES (0.00,250000.00),(250001.00,500000.00),(500001.00,1000000.00),(1000001.00,1500000.00);
-/*!40000 ALTER TABLE `Slab_range` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `Slabs`
 --
 
@@ -613,14 +601,12 @@ DROP TABLE IF EXISTS `Slabs`;
 CREATE TABLE `Slabs` (
   `Slab_ID` int NOT NULL,
   `Minimum_Income` decimal(15,2) DEFAULT NULL,
+  `Maximum_Income` decimal(15,2) DEFAULT NULL,
   `Tax_Rate` decimal(5,2) DEFAULT NULL,
   `CESS_Rate` decimal(5,2) DEFAULT NULL,
-  `Effective_from` date DEFAULT NULL,
-  PRIMARY KEY (`Slab_ID`),
-  KEY `Effective_from` (`Effective_from`),
-  KEY `Minimum_Income` (`Minimum_Income`),
-  CONSTRAINT `Slabs_ibfk_1` FOREIGN KEY (`Effective_from`) REFERENCES `Effective_Timeline` (`Effective_from`),
-  CONSTRAINT `Slabs_ibfk_2` FOREIGN KEY (`Minimum_Income`) REFERENCES `Slab_range` (`Minimum_Income`)
+  `Effective_from` year DEFAULT NULL,
+  `Effective_to` year DEFAULT NULL,
+  PRIMARY KEY (`Slab_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -630,7 +616,7 @@ CREATE TABLE `Slabs` (
 
 LOCK TABLES `Slabs` WRITE;
 /*!40000 ALTER TABLE `Slabs` DISABLE KEYS */;
-INSERT INTO `Slabs` VALUES (1,0.00,0.00,0.00,'2022-04-01'),(2,250001.00,5.00,4.00,'2022-04-01'),(3,500001.00,10.00,4.00,'2022-04-01'),(4,1000001.00,20.00,4.00,'2022-04-01');
+INSERT INTO `Slabs` VALUES (1,0.00,250000.00,0.00,0.00,2022,2023),(2,250001.00,500000.00,5.00,4.00,2022,2023),(3,500001.00,1000000.00,10.00,4.00,2022,2023),(4,1000001.00,1500000.00,20.00,4.00,2022,2023);
 /*!40000 ALTER TABLE `Slabs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -785,9 +771,44 @@ CREATE TABLE `Transactions_Involving_Non_Assessee` (
 
 LOCK TABLES `Transactions_Involving_Non_Assessee` WRITE;
 /*!40000 ALTER TABLE `Transactions_Involving_Non_Assessee` DISABLE KEYS */;
-INSERT INTO `Transactions_Involving_Non_Assessee` VALUES (1,'777788889999');
+INSERT INTO `Transactions_Involving_Non_Assessee` VALUES (1,'777788889999'),(5,'ACC123456'),(6,'ACC123456'),(7,'ACC123456');
 /*!40000 ALTER TABLE `Transactions_Involving_Non_Assessee` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`kiyohan`@`localhost`*/ /*!50003 TRIGGER `update_is_defaulter` AFTER INSERT ON `Transactions_Involving_Non_Assessee` FOR EACH ROW BEGIN
+    
+    DECLARE total_amount DECIMAL(15, 2);
+
+    
+    SELECT SUM(Bank_Transactions.Transaction_Amount) INTO total_amount
+    FROM Bank_Transactions
+    INNER JOIN Transactions_Involving_Non_Assessee
+    ON Bank_Transactions.Transaction_ID = Transactions_Involving_Non_Assessee.Transaction_Number
+    WHERE Transactions_Involving_Non_Assessee.Bank_Account_Number = NEW.Bank_Account_Number;
+
+    
+    IF total_amount > 10000 THEN
+        
+        UPDATE Non_Assessee_with_PAN
+        SET Is_tax_defaulter = TRUE
+        WHERE PAN = (SELECT PAN
+                     FROM Non_Assessee_Bank_Details
+                     WHERE Bank_Account_Number = NEW.Bank_Account_Number);
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -798,4 +819,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-26 22:42:15
+-- Dump completed on 2024-11-28 17:56:20

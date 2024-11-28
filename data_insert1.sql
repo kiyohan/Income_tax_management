@@ -40,11 +40,13 @@ INSERT INTO Assessee_Bank_Details (Bank_Account_Number, PAN, Account_Holder_Name
 
 -- Non_Assessee_with_PAN
 INSERT INTO Non_Assessee_with_PAN (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Address, Contact_Number, Residency_Status, Aadhar_Number, Is_tax_defaulter) VALUES
-('NOPQR1234S', 'David', 'Andrew', 'Brown', '1980-12-20', 'M', '789 Side Lane, City', '6677889900', 'Resident', '345678901234', FALSE);
+('NOPQR1234S', 'David', 'Andrew', 'Brown', '1980-12-20', 'M', '789 Side Lane, City', '6677889900', 'Resident', '345678901234', FALSE),
+('NONPAN1234', 'John',NULL, 'Doe','1900-10-19','M','123 Tax Lane', '9876543210','NRI',4242252424, FALSE);
 
 -- Non_Assessee_Bank_Details
 INSERT INTO Non_Assessee_Bank_Details (Bank_Account_Number, PAN) VALUES
-('777788889999', 'NOPQR1234S');
+('777788889999', 'NOPQR1234S'),
+('ACC123456', 'NONPAN1234');
 
 -- Bank_Transactions
 INSERT INTO Bank_Transactions (Transaction_ID, Transaction_Type, Sender_Account_Number, Receiver_Account_Number, Transaction_Amount) VALUES
@@ -74,26 +76,25 @@ INSERT INTO Goods (TCS_Certificate_Number, Goods_Type) VALUES
 (2001, 'Electronics'),
 (2001, 'Furniture');
 
---Corresponding_year
-INSERT INTO Corresponding_year (Start_Year, End_Year) VALUES
-(2022, 2023),
-(2023, 2024);
+-- INSERT INTO Corresponding_year (Start_Year, End_Year) VALUES
+-- (2022, 2023),
+-- (2023, 2024);
 
 -- ITR
 INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year,Total_Taxable_Income, Total_Tax_Paid, Status) VALUES
 (3001, 'ABCDE1234F', 33, 'Individual', '2022-07-01', 'New', '2023-07-31', 2022,2023, 1000000.00, 105000.00, 'Processed');
 
 -- Is_penaliser
-INSERT INTO Is_penaliser (Penalty, PAN) VALUES
-(500.00, 'ABCDE1234F');
+-- INSERT INTO Is_penaliser (Penalty, PAN) VALUES
+-- (500.00, 'ABCDE1234F');
 
 -- Corresponding_Slabs
 INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID) VALUES
 (3001, 3);
 
 -- Income_Details
-INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
-(3001, 'ABCDE1234F', 2022, 800000.00, 50000.00, 20000.00, 10000.00, 5000.00, 10000.00);
+INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,End_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
+(3001, 'ABCDE1234F', 2022,2023, 800000.00, 50000.00, 20000.00, 10000.00, 5000.00, 10000.00);
 
 -- Other_Income
 INSERT INTO Other_Income (Acknowledgement_Number, Income_source) VALUES
@@ -105,9 +106,9 @@ INSERT INTO Deduction_limit (Deduction_Type, Max_allowable_limit) VALUES
 ('80C', 150000.00),
 ('80D', 25000.00);
 
--- Deduction_period
-INSERT INTO Deduction_period (Acknowledgement_Number, PAN, Start_Year) VALUES
-(3001, 'ABCDE1234F', 2022);
+-- -- Deduction_period
+-- INSERT INTO Deduction_period (Acknowledgement_Number, PAN, Start_Year) VALUES
+-- (3001, 'ABCDE1234F', 2022);
 
 -- Deduction
 INSERT INTO Deduction (Acknowledgement_Number, Deduction_Type, Deduction_Amount) VALUES
@@ -120,8 +121,8 @@ INSERT INTO Sections (Acknowledgement_Number, Deduction_Type, Section_Code) VALU
 (3001, '80D', '80D');
 
 -- Tax_Verification
-INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
-(3001, '111122223333', 'Completed', 2022, '2022-08-01', '2022-08-05', 105000.00, 105000.00, 'IFSC001');
+INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
+(3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 105000.00, 'IFSC001');
 
 -- Refund_details
 INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
@@ -223,6 +224,39 @@ DELIMITER ;
 
 DELIMITER $$
 
+ -- INSERT TRIGGER FOR TAX VERIFICATION
+CREATE TRIGGER after_tax_verification_insert
+AFTER INSERT ON Tax_Verification
+FOR EACH ROW
+BEGIN
+    INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status)
+    VALUES (
+        NEW.Acknowledgement_Number,
+        ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+        'Pending' 
+    );
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+-- UPDATE TRIGGER FOR TAX VERIFICATION
+CREATE TRIGGER after_tax_verification_update
+AFTER UPDATE ON Tax_Verification
+FOR EACH ROW
+BEGIN
+    IF NEW.Acknowledgement_Number = OLD.Acknowledgement_Number THEN
+        UPDATE Refund_details
+        SET Refund_amount = ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+            Refund_status = 'Pending' 
+        WHERE Acknowledgement_Number = NEW.Acknowledgement_Number;
+    END IF;
+END$$
+
+-- Reset the delimiter back to the default
+DELIMITER ;
+
+DELIMITER $$
 CREATE TRIGGER update_total_income_before_insert
 BEFORE INSERT ON Income_Details
 FOR EACH ROW
@@ -233,6 +267,7 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 DELIMITER $$
 
 CREATE TRIGGER update_total_income_before_update
@@ -261,11 +296,13 @@ BEGIN
     DECLARE bankaccountnumber VARCHAR(20);
     DECLARE ifsccode VARCHAR(11);
     DECLARE requesteddate DATE;
+    DECLARE duedate DATE;
     DECLARE taxpaid DECIMAL(15, 2);
+    DECLARE penalties DECIMAL(15, 2 ) DEFAULT 0;
 
     -- Fetch PAN, Start_Year, End_Year, Requested_Date, and Tax_Paid from the ITR table
-    SELECT PAN, Start_Year, End_Year, Submission_Date, Total_Tax_Paid
-    INTO pan_card, itr_start_year, itr_end_year, requesteddate, taxpaid
+    SELECT PAN, Start_Year, End_Year, Submission_Date, Total_Tax_Paid ,Due_Date
+    INTO pan_card, itr_start_year, itr_end_year, requesteddate, taxpaid ,duedate
     FROM ITR
     WHERE Acknowledgement_Number = ack_no;
 
@@ -303,9 +340,9 @@ BEGIN
     SET total_tax = total_slab_tax - tcs_amount - tds_amount;
 
     -- Update the Total_Taxable_Income field in the ITR table
-    UPDATE ITR
-    SET Total_Taxable_Income = total_tax
-    WHERE Acknowledgement_Number = ack_no;
+    -- UPDATE ITR
+    -- SET Total_Taxable_Income = total_tax
+    -- WHERE Acknowledgement_Number = ack_no;
 
     -- Fetch Bank Account Details for the given PAN card
     SELECT Bank_Account_Number, IFSC
@@ -337,6 +374,22 @@ BEGIN
         ifsccode
     );
 
+    DELETE FROM Is_penaliser WHERE Acknowledgement_Number = ack_no AND PAN = pan_card;
+
+    IF requesteddate > duedate THEN
+        -- Calculate penalties if the condition is true
+        SET penalties = 0.005 * total_tax;
+        SET total_tax = total_tax + penalties;
+    END IF;
+
+
+    INSERT INTO Is_penaliser(Acknowledgement_Number, Penalty,PAN)
+    VALUES (ack_no,penalties,pan_card);
+    
+
+    UPDATE ITR
+    SET Total_Taxable_Income = total_tax
+    WHERE Acknowledgement_Number = ack_no;
     -- Display the acknowledgment number and total tax
     SELECT 
         ack_no AS Acknowledgement_Number,  
@@ -362,3 +415,48 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER update_is_defaulter
+AFTER INSERT ON Transactions_Involving_Non_Assessee
+FOR EACH ROW
+BEGIN
+    -- Declare a variable to store the cumulative transaction amount for the non-assessee
+    DECLARE total_amount DECIMAL(15, 2);
+
+    -- Calculate the total transaction amount for the involved bank account
+    SELECT SUM(Bank_Transactions.Transaction_Amount) INTO total_amount
+    FROM Bank_Transactions
+    INNER JOIN Transactions_Involving_Non_Assessee
+    ON Bank_Transactions.Transaction_ID = Transactions_Involving_Non_Assessee.Transaction_Number
+    WHERE Transactions_Involving_Non_Assessee.Bank_Account_Number = NEW.Bank_Account_Number;
+
+    -- Check if the total exceeds the threshold
+    IF total_amount > 250000 THEN
+        -- Update the defaulter status in the Non_Assessee_with_PAN table
+        UPDATE Non_Assessee_with_PAN
+        SET Is_tax_defaulter = TRUE
+        WHERE PAN = (SELECT PAN
+                     FROM Non_Assessee_Bank_Details
+                     WHERE Bank_Account_Number = NEW.Bank_Account_Number);
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+-- -- Insert transactions
+-- INSERT INTO Bank_Transactions (Transaction_ID, Transaction_Type, Sender_Account_Number, Receiver_Account_Number, Transaction_Amount)
+-- VALUES 
+-- (5, 'Transfer', 'ACC000001', 'ACC123456', 5000.00),
+-- (6, 'Transfer', 'ACC000002', 'ACC123456', 3000.00),
+-- (7, 'Transfer', 'ACC000003', 'ACC123456', 4000.00);
+
+-- -- Link transactions with the non-assessee's bank account
+-- INSERT INTO Transactions_Involving_Non_Assessee (Transaction_Number, Bank_Account_Number)
+-- VALUES 
+-- (5, 'ACC123456'),
+-- (6, 'ACC123456'),
+-- (7, 'ACC123456');
+

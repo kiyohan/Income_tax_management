@@ -17,8 +17,8 @@ USE Taxation_System;
 -- Slabs Table depending on Effective Timeline and Slab Range
 CREATE TABLE IF NOT EXISTS Slabs (
     Slab_ID INT PRIMARY KEY,
-    Minimum_Income DECIMAL(15, 2),
-    Maximum_Income DECIMAL(15, 2),
+    Minimum_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Maximum_Income DECIMAL(15, 2) DEFAULT 0.00,
     Tax_Rate DECIMAL(5, 2),
     CESS_Rate DECIMAL(5, 2),
     Effective_from YEAR,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS Bank_Transactions (
     Transaction_Type VARCHAR(50),
     Sender_Account_Number VARCHAR(20),
     Receiver_Account_Number VARCHAR(20),
-    Transaction_Amount DECIMAL(15, 2)
+    Transaction_Amount DECIMAL(15, 2) DEFAULT 0.00
 );
 
 -- Transactions Involving Assessee
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS TDS (
     Deductor_Name VARCHAR(255),
     Deductor_TAN VARCHAR(20),
     Income_Type VARCHAR(50),
-    TDS_Amount DECIMAL(15, 2),
+    TDS_Amount DECIMAL(15, 2) DEFAULT 0.00,
     Date_of_Deduction DATE,
     Section_Code VARCHAR(10),
     Start_Year YEAR,
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS TCS (
     PAN VARCHAR(15),
     Seller_Name VARCHAR(255),
     Seller_TAN VARCHAR(20),
-    TCS_Amount DECIMAL(15, 2),
+    TCS_Amount DECIMAL(15, 2)   DEFAULT 0.00,
     Date_of_Collection DATE,
     Section_Code VARCHAR(10),
     Start_Year YEAR,
@@ -154,16 +154,17 @@ CREATE TABLE IF NOT EXISTS Goods (
 );
 
 -- Corresponding Year Table
-CREATE TABLE IF NOT EXISTS Corresponding_year (
-    Start_Year YEAR PRIMARY KEY,
-    End_Year YEAR
-);
+-- CREATE TABLE IF NOT EXISTS Corresponding_year (
+--     Start_Year YEAR PRIMARY KEY,
+--     End_Year YEAR
+-- );
 
 -- Is Penaliser Table
 CREATE TABLE IF NOT EXISTS Is_penaliser (
-    Penalty DECIMAL(15, 2),
+    Acknowledgement_Number INT ,
+    Penalty DECIMAL(15, 2) DEFAULT 0.00,
     PAN VARCHAR(15),
-    PRIMARY KEY (PAN)
+    PRIMARY KEY (Acknowledgement_Number,PAN)
     -- FOREIGN KEY (PAN) REFERENCES ITR(PAN)
 );
 
@@ -178,11 +179,11 @@ CREATE TABLE IF NOT EXISTS ITR (
     Due_Date DATE,
     Start_Year YEAR,
     End_Year YEAR,
-    Total_Taxable_Income DECIMAL(15, 2),
-    Total_Tax_Paid DECIMAL(15, 2),
+    Total_Taxable_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Total_Tax_Paid DECIMAL(15, 2)   DEFAULT 0.00,
     Status VARCHAR(20),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN),
-    FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
 ALTER TABLE Is_penaliser
@@ -191,7 +192,7 @@ ADD FOREIGN KEY (PAN) REFERENCES ITR(PAN);
 CREATE TABLE IF NOT EXISTS Corresponding_Slabs (
     Acknowledgement_Number INT,
     Slab_ID INT,
-    Amount DECIMAL(15, 2),
+    Amount DECIMAL(15, 2) DEFAULT 0.00,
     PRIMARY KEY (Acknowledgement_Number, Slab_ID),
     FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number)
     -- FOREIGN KEY (Slab_ID) REFERENCES Slabs(Slab_ID)
@@ -203,17 +204,18 @@ CREATE TABLE IF NOT EXISTS Income_Details (
     Acknowledgement_Number INT,
     PAN VARCHAR(15),
     Start_Year YEAR,
-    Salary_Income DECIMAL(15, 2),
-    Business_Income DECIMAL(15, 2),
-    Capital_Gain DECIMAL(15, 2),
-    House_Property_Income DECIMAL(15, 2),
-    Agriculture_Income DECIMAL(15, 2),
-    Other_Income_Total DECIMAL(15, 2),
-    Total_income DECIMAL(15, 2), -- salary_income + business_income + capital_gain + house_property_income + agriculture_income + other_income_total
+    End_Year YEAR,
+    Salary_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Business_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Capital_Gain DECIMAL(15, 2) DEFAULT 0.00,
+    House_Property_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Agriculture_Income DECIMAL(15, 2) DEFAULT 0.00,
+    Other_Income_Total DECIMAL(15, 2) DEFAULT 0.00,
+    Total_income DECIMAL(15, 2) DEFAULT 0.00, -- salary_income + business_income + capital_gain + house_property_income + agriculture_income + other_income_total
     PRIMARY KEY (Acknowledgement_Number),
     FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN),
-    FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
 -- Other Income Table
@@ -227,26 +229,26 @@ CREATE TABLE IF NOT EXISTS Other_Income (
 -- Deduction Limit Table
 CREATE TABLE IF NOT EXISTS Deduction_limit (
     Deduction_Type VARCHAR(50) PRIMARY KEY,
-    Max_allowable_limit DECIMAL(15, 2)
+    Max_allowable_limit DECIMAL(15, 2) DEFAULT 0.00
 );
 
--- Deduction Period Table
-CREATE TABLE IF NOT EXISTS Deduction_period (
-    Acknowledgement_Number INT PRIMARY KEY,
-    PAN VARCHAR(15),
-    Start_Year YEAR,
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN),
-    FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
-);
+-- -- Deduction Period Table
+-- CREATE TABLE IF NOT EXISTS Deduction_period (
+--     Acknowledgement_Number INT PRIMARY KEY,
+--     PAN VARCHAR(15),
+--     Start_Year YEAR,
+--     FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
+--     FOREIGN KEY (PAN) REFERENCES Assessee(PAN),
+--     FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
+-- );
 
 -- Deduction Table
 CREATE TABLE IF NOT EXISTS Deduction (
     Acknowledgement_Number INT,
     Deduction_Type VARCHAR(50),
-    Deduction_Amount DECIMAL(15, 2),
+    Deduction_Amount DECIMAL(15, 2) DEFAULT 0.00,
     PRIMARY KEY (Acknowledgement_Number, Deduction_Type),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES Deduction_period(Acknowledgement_Number),
+    -- FOREIGN KEY (Acknowledgement_Number) REFERENCES Deduction_period(Acknowledgement_Number),
     FOREIGN KEY (Deduction_Type) REFERENCES Deduction_limit(Deduction_Type)
 );
 
@@ -266,19 +268,20 @@ CREATE TABLE IF NOT EXISTS Tax_Verification (
     Bank_Account_Number VARCHAR(20),
     Status VARCHAR(20),
     Start_Year YEAR,
+    End_Year YEAR,
     Requested_Date DATE,
     Processed_Date DATE,
-    Tax_Amount DECIMAL(15, 2),
-    Tax_Paid DECIMAL(15, 2),
+    Tax_Amount DECIMAL(15, 2)   DEFAULT 0.00,
+    Tax_Paid DECIMAL(15, 2) DEFAULT 0.00,
     IFSC_Code VARCHAR(11),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
-    FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number)
+    -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
 -- Refund Details Table
 CREATE TABLE IF NOT EXISTS Refund_details (
     Acknowledgement_Number INT PRIMARY KEY,
-    Refund_amount DECIMAL(15, 2),
+    Refund_amount DECIMAL(15, 2) DEFAULT 0.00,
     Refund_status VARCHAR(20),
     FOREIGN KEY (Acknowledgement_Number) REFERENCES Tax_Verification(Acknowledgement_Number)
 );
