@@ -41,10 +41,14 @@ def db_query(query):
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+ADMIN_USERNAMES = {"arman", "kiyohan"}
+
+def get_user_role(username):
+    return "Admin" if username in ADMIN_USERNAMES else "User"
+
 # Print the help menu
-def print_help():
-    # print(colored("Available Commands:", "cyan", attrs=["bold"]))
-    commands = [
+def print_help(role):
+    admin_commands = [
         ("insert_ITR", "Insert a new ITR"),
         ("insert_assessee", "Insert a new assessee"),
         ("insert_slabs", "Insert into slabs table"),
@@ -57,11 +61,24 @@ def print_help():
         ("find_highest_tax_income", "Find assessees with the highest taxable income"),
         ("exit", "Exit the program"),
     ]
+
+    user_commands = [
+        ("insert_assessee", "Insert a new assessee"),
+        ("insert_ITR", "Insert a new ITR"),
+        ("retrieve_slabs", "Retrieve all slabs with tax and CESS rates"),
+        ("retrieve_transactions", "Retrieve transactions for a specific assessee"),
+        ("update_address", "Update an assessee's address"),
+        ("exit", "Exit the program"),
+    ]
+
+    # Choose commands based on role
+    commands = admin_commands if role == "Admin" else user_commands
     return commands
 
-# Display commands and let the user choose one
-def show_menu(commands):
-    print(colored("\nSelect a query to execute:", "yellow", attrs=["bold"]))
+# Display menu and enforce access control
+def show_menu(role):
+    commands = print_help(role)
+    print(colored(f"\n{role} Menu:", "yellow", attrs=["bold"]))
     for idx, (cmd, desc) in enumerate(commands, start=1):
         print(f"  {colored(f'{idx}. {cmd}', 'green')} - {desc}")
     print()
@@ -91,6 +108,7 @@ print("Please enter your database credentials.")
 username = input(colored("Username: ", "cyan"))
 password = getpass.getpass(colored("Password: ", "cyan"))
 
+is_admin = username in ADMIN_USERNAMES
 try:
     db_connect(username, password)
     db_init()
@@ -100,14 +118,24 @@ except Exception as e:
     print(colored(f"Error: {e}", "red", attrs=["bold"]))
     exit()
 
+# Determine user role
+role = get_user_role(username)
+print(colored(f"Logged in as {role}.", "blue", attrs=["bold"]))
+
 while True:
-    print()
-    commands = print_help()
-    query = show_menu(commands)
+    commands = print_help(role)
+    query = show_menu(role)
 
     if query == 'exit':
         print(colored("Exiting... Goodbye!", "yellow", attrs=["bold"]))
         break
+
+    # Only Admins can execute restricted queries
+    if role != "Admin" and query in {'insert_slabs', 'update_tax_rate', 'delete_assessee', 'delete_tds', 'find_highest_tax_income'}:
+        print(colored("You do not have permission to execute this query.", "red"))
+        continue
+
+
     elif query == 'insert_assessee':
         print(colored("Enter the following details to insert a new assessee:", "cyan"))
         PAN = input("  PAN: ")
@@ -139,7 +167,7 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-    elif query == 'delete_assessee':
+    elif query == 'delete_assessee' and is_admin:
         PAN = input("Enter the PAN of the assessee to delete: ")
         query = f'''
             DELETE FROM Assessee
@@ -151,7 +179,7 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-    elif query == 'insert_slabs':
+    elif query == 'insert_slabs' and is_admin:
         print(colored("Enter the following details to insert into slabs table:", "cyan"))
         Slab_ID = input("  Slab ID: ")
         Minimum_Income = input("  Minimum Income: ")
@@ -180,7 +208,7 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-    elif query == 'update_tax_rate':
+    elif query == 'update_tax_rate' and is_admin:
         Slab_ID = input("Enter the Slab ID to update: ")
         Tax_Rate = input("Enter the new Tax Rate: ")
         query = f'''
@@ -216,7 +244,7 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-    elif query == 'find_highest_tax_income':
+    elif query == 'find_highest_tax_income' and is_admin:
         query = '''
             SELECT PAN, Total_Taxable_Income FROM ITR
             ORDER BY Total_Taxable_Income DESC LIMIT 5
@@ -241,7 +269,7 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-    elif query == 'delete_tds':
+    elif query == 'delete_tds' and is_admin:
         TDS_Certificate_Number = input("Enter the TDS Certificate Number to delete: ")
         query = f'''
             DELETE FROM TDS
