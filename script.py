@@ -154,8 +154,8 @@ while True:
             FirstName = input("  First Name: ")
             MiddleName = input("  Middle Name: ")
             LastName = input("  Last Name: ")
-            DOB = input("  Date of Birth: ")
-            Gender = input("Gender: ")
+            DOB = input("  Date of Birth(YYYY-MM-DD): ")
+            Gender = input("Gender(M/F): ")
             Residence_Status = input("Residence Status: ")
             Aadhar = input("Aadhar Number: ")
 
@@ -178,7 +178,7 @@ while True:
 
             Company_Name = input("  Company Name: ")
             Registration_Number = input("  Registration Number: ")
-            Incorporation_Date = input("  Incorporation Date: ")
+            Incorporation_Date = input("  Incorporation Date(YYYY-MM-DD): ")
 
             query = f'''
                 INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
@@ -291,9 +291,9 @@ while True:
         Acknowledgement_no = input('Acknowledgement_no: ')
         PAN = input('PAN: ')
         Tax_Payer_Category = input('Tax_Payer_Category: ')
-        Submission_date = input('Submission_date: ')
+        Submission_date = input('Submission_date(YYYY-MM-DD): ')
         Regime = input('Regime: ')
-        Due_date = input('Due_date: ')
+        Due_date = input('Due_date(YYYY-MM-DD): ')
         Start_Year = input('Start_Year: ')
         Total_Tax_Paid = input('Total_Tax_Paid: ')
         age_query = f'SELECT YEAR(CURDATE()) - YEAR(dob) - (RIGHT(CURDATE(), 5) < RIGHT(dob, 5)) FROM Individual_Assessee WHERE PAN = "{PAN}"'
