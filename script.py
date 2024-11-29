@@ -309,11 +309,12 @@ while True:
         age_query = f'SELECT YEAR(CURDATE()) - YEAR(dob) - (RIGHT(CURDATE(), 5) < RIGHT(dob, 5)) FROM Individual_Assessee WHERE PAN = "{PAN}"'
         age_result = db_query(age_query)
         Age = age_result[0][0] if age_result else None
+        Age = int(Age[0])
         if Age is None:
             print('Error: PAN not found in Individual_Assessee table')
             continue
         query = f'''
-            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year Total_Tax_Paid, Status)
+            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year, Total_Tax_Paid, Status)
             VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{End_Year}", "{Total_Tax_Paid}", "Pending")
         '''
 
@@ -351,6 +352,11 @@ while True:
                 INSERT INTO Other_Income (Acknowledgement_Number, Income_source)
                 VALUES ("{Acknowledgement_no}", "{Other_Income}")
             '''
+            try:    
+                db_query(query2)
+                print(colored("Other Income Details inserted successfully.", "green"))
+            except Exception as e:
+                print(colored(f"Error: {e}", "red"))
 
         try:
             db_query(query)
@@ -358,11 +364,6 @@ while True:
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
-        try:    
-            db_query(query2)
-            print(colored("Other Income Details inserted successfully.", "green"))
-        except Exception as e:
-            print(colored(f"Error: {e}", "red"))
 
     elif query == 'find_highest_tax_income' and is_admin:
         query = '''
