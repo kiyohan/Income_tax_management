@@ -341,7 +341,9 @@ BEGIN
     AND d.End_Year <= itr_end_year;
 
     -- Calculate the total tax
-    SET total_tax = total_slab_tax - tcs_amount - tds_amount;
+    IF total_slab_tax - tcs_amount - tds_amount > 0 THEN
+       SET total_tax = total_slab_tax - tcs_amount - tds_amount;
+    END IF;
 
     -- Update the Total_Taxable_Income field in the ITR table
     -- UPDATE ITR
