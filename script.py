@@ -41,7 +41,7 @@ def db_query(query):
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-ADMIN_USERNAMES = {"arman", "kiyohan"}
+ADMIN_USERNAMES = {"arman", "kiyohan" ,"rohan_DNA"}
 
 def get_user_role(username):
     return "Admin" if username in ADMIN_USERNAMES else "User"
