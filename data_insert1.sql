@@ -10,14 +10,22 @@ INSERT INTO Slabs (Slab_ID, Minimum_Income, Maximum_Income, Tax_Rate, CESS_Rate,
 (1, 0.00, 250000.00,0.00, 0.00, 2022, 2023),
 (2, 250001.00, 500000.00, 5.00, 1.00, 2022, 2023),
 (3, 500001.00, 1000000.00, 10.00, 2.00, 2022, 2023),
-(4, 1000001.00, float('inf'), 20.00, 4.00, 2022, 2023);
+(4, 1000001.00, 9999999999.00, 20.00, 4.00, 2022, 2023),
+(5, 0.00, 250000.00,0.00, 0.00, 2023, 2024),
+(6, 250001.00, 500000.00, 5.00, 1.00, 2023, 2024),
+(7, 500001.00, 1000000.00, 10.00, 2.00, 2023, 2024),
+(8, 1000001.00, 9999999999.00, 20.00, 4.00, 2023, 2024),
+(9, 0.00, 250000.00,0.00, 0.00, 2024, 2025),
+(10, 250001.00, 500000.00, 5.00, 1.00, 2024, 2025),
+(11, 500001.00, 1000000.00, 10.00, 2.00, 2024, 2025),
+(12, 1000001.00, 9999999999.00, 20.00, 4.00, 2024, 2025);
 
 -- Assessee
 INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN) VALUES
 ('ABCDE1234F', '123 Main St, City', '1234567890', 'Filed', NULL),
 ('FGHIJ5678K', '456 Side St, City', '0987654321', 'Not Filed', 'ABCDE1234F'),
-('JKLMN9101P', '789 Back St, City', '1122334455', 'Filed', NULL),
-('NOPQR5678L', '987 Market Rd, City', '6677889900', 'Filed', 'JKLMN9101P');
+('JKLMN9101P', '789 Back St, City', '1122334455', 'Not Filed', NULL),
+('NOPQR5678L', '987 Market Rd, City', '6677889900', 'Not Filed', 'JKLMN9101P');
 
 -- Individual_Assessee
 INSERT INTO Individual_Assessee (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Residency_Status, Aadhar_Number) VALUES
@@ -31,41 +39,48 @@ INSERT INTO Corporate_Assessee (PAN, Company_Name, Registration_Number, Date_of_
 
 -- Assessee_Bank_Details
 INSERT INTO Assessee_Bank_Details (Bank_Account_Number, PAN, Account_Holder_Name, Bank_Address, IFSC) VALUES
-('111122223333', 'ABCDE1234F', 'John Doe', '123 Bank St, City', 'IFSC001'),
-('444455556666', 'FGHIJ5678K', 'Jane Smith', '456 Bank St, City', 'IFSC002');
+('123456789123', 'ABCDE1234F', 'John Doe', '123 Bank St, City', 'IFSC001'),
+('321987654321', 'FGHIJ5678K', 'Jane Smith', '456 Bank St, City', 'IFSC002');
 
 -- Non_Assessee_with_PAN
 INSERT INTO Non_Assessee_with_PAN (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Address, Contact_Number, Residency_Status, Aadhar_Number, Is_tax_defaulter) VALUES
 ('NONPQR1234', 'David', 'Andrew', 'Brown', '1980-12-20', 'M', '789 Side Lane, City', '6677889900', 'Resident', '345678901234', FALSE),
-('NONPAN1234', 'Spider',NULL, 'Man','1900-10-19','M','123 Tax Lane', '9876543210','NRI','424225242458', FALSE);
+('NONPAN1234', 'Spider',NULL, 'Man','1900-10-19','M','123 Tax Lane', '9876543210','NRI','424225242458', TRUE);
 
 -- Non_Assessee_Bank_Details
 INSERT INTO Non_Assessee_Bank_Details (Bank_Account_Number, PAN) VALUES
-('ACC788889999', 'NOPQR1234S'),
-('ACC123456789', 'NONPAN1234');
+('987321654132', 'NONPQR1234'),
+('721789456123', 'NONPAN1234');
 
 -- Bank_Transactions
 INSERT INTO Bank_Transactions (Transaction_ID, Transaction_Type, Sender_Account_Number, Receiver_Account_Number, Transaction_Amount) VALUES
-(1, 'Transfer', '111122223333', '777788889999', 1000.00),
+(1, 'Transfer', '123456789123', '777788889999', 1000.00),
 (2, 'Deposit', NULL, '444455556666', 5000.00),
-(3, 'Withdrawal', '444455556666', NULL, 2000.00);
+(3, 'Withdrawal', '321987654321', NULL, 2000.00),
+(4, 'Transfer', '963258741543',  '987321654132', 3500.00),
+(5, 'Transfer', '721789456123', '987321654132', 250001.00);
 
 -- Transactions_Involving_Assessee
 INSERT INTO Transactions_Involving_Assessee (Transaction_Number, Account_Number) VALUES
-(1, '111122223333'),
-(3, '444455556666');
+(1, '123456789123'),
+(3, '321987654321');
+
+
 
 -- Transactions_Involving_Non_Assessee
 INSERT INTO Transactions_Involving_Non_Assessee (Transaction_Number, Bank_Account_Number) VALUES
-(1, '777788889999');
+(4, '987321654132'),
+(5, '721789456123');
+
 
 -- TDS
 INSERT INTO TDS (TDS_Certificate_Number, PAN, Deductor_Name, Deductor_TAN, Income_Type, TDS_Amount, Date_of_Deduction, Section_Code, Start_Year, End_Year) VALUES
-(1001, 'ABCDE1234F', 'Corp A', 'TAN001', 'Salary', 5000.00, '2022-06-15', '192', 2022, 2023);
+(1001, 'ABCDE1234F', 'Corp A', 'DTAN001', 'Salary', 5000.00, '2022-06-15', '192', 2022, 2023);
+(1002, 'FGHIJ5678K', 'Corp B', 'DTAN002', 'Salary', 4500.00, '2022-09-23', '192', 2022, 2023);
 
 -- TCS
 INSERT INTO TCS (TCS_Certificate_Number, PAN, Seller_Name, Seller_TAN, TCS_Amount, Date_of_Collection, Section_Code, Start_Year, End_Year) VALUES
-(2001, 'JKLMN9101P', 'Shop A', 'TAN002', 200.00, '2022-06-20', '206C', 2022, 2023);
+(2001, 'FGHIJ5678K', 'Shop A', 'STAN001', 200.00, '2022-06-20', '206C', 2022, 2023);
 
 -- Goods
 INSERT INTO Goods (TCS_Certificate_Number, Goods_Type) VALUES
@@ -74,20 +89,21 @@ INSERT INTO Goods (TCS_Certificate_Number, Goods_Type) VALUES
 
 -- ITR
 INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year,Total_Taxable_Income, Total_Tax_Paid, Status) VALUES
-(3001, 'ABCDE1234F', 33, 'Individual', '2022-07-01', 'New', '2023-07-31', 2022,2023, 1000000.00, 105000.00, 'Processed');
+(3001, 'ABCDE1234F', 33, 'Individual', '2023-07-01', 'New', '2022-07-31', 2022,2023, 49124.45, 50000.00, 'Processed');
 
 -- Is_penaliser
-INSERT INTO Is_penaliser (Penalty, PAN) VALUES
-(500.00, 'ABCDE1234F');
+INSERT INTO Is_penaliser (Acknowledgement_Number, Penalty, PAN) VALUES
+(3001, 244.40, 'ABCDE1234F');
 
 -- Corresponding_Slabs
 INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID, Amount) VALUES
-(3001, 3, 500000.00),
-(3001, 4, 500000.00);
+(3001, 1, 250000.00),
+(3001, 2, 249999.00);
+(3001, 2, 395001.00);
 
 -- Income_Details
-INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,End_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
-(3001, 'ABCDE1234F', 2022,2023, 800000.00, 50000.00, 20000.00, 10000.00, 5000.00, 10000.00);
+INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,End_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total,Total_income) VALUES
+(3001, 'ABCDE1234F', 2022,2023, 800000.00, 50000.00, 20000.00, 10000.00, 5000.00, 10000.00,895000.00);
 
 -- Other_Income
 INSERT INTO Other_Income (Acknowledgement_Number, Income_source) VALUES
@@ -96,8 +112,8 @@ INSERT INTO Other_Income (Acknowledgement_Number, Income_source) VALUES
 
 -- Deduction_limit
 INSERT INTO Deduction_limit (Deduction_Type, Max_allowable_limit) VALUES
-('80C', 150000.00),
-('80D', 25000.00);
+('80C',100000000.00),
+('80D',100000000.00);
 
 -- Deduction
 INSERT INTO Deduction (Acknowledgement_Number, Deduction_Type, Deduction_Amount) VALUES
@@ -111,11 +127,11 @@ INSERT INTO Sections (Acknowledgement_Number, Deduction_Type, Section_Code) VALU
 
 -- Tax_Verification
 INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
-(3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 115000.00, 'IFSC001');
+(3001, '123456789123', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 49124.45, 50000.00, 'IFSC001');
 
 -- Refund_details
 INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
-(3001, 10000.00, 'Pending');
+(3001, 875.55, 'Done');
 
 DELIMITER $$
 
