@@ -54,6 +54,7 @@ def print_help(role):
         ("insert_slabs", "Insert into slabs table"),
         ("update_address", "Update an assessee's address"),
         ("update_tax_rate", "Update tax rate in slabs table"),
+        ("update_salary", "Updates an assessee's salary."),
         ("delete_assessee", "Delete an assessee"),
         ("delete_tds", "Delete a TDS record"),
         ("retrieve_slabs", "Retrieve all slabs with tax and CESS rates"),
@@ -68,6 +69,7 @@ def print_help(role):
         ("retrieve_slabs", "Retrieve all slabs with tax and CESS rates"),
         ("retrieve_transactions", "Retrieve transactions for a specific assessee"),
         ("update_address", "Update an assessee's address"),
+        ("update_salary", "Updates an assessee's salary."),
         ("exit", "Exit the program"),
     ]
 
@@ -164,6 +166,21 @@ while True:
         try:
             db_query(query)
             print(colored("Address updated successfully.", "green"))
+        except Exception as e:
+            print(colored(f"Error: {e}", "red"))
+
+    elif query == 'update_salary':
+        Ack_no=input("Enter Acknowledgement No: ")
+        Salary = input("Enter the new salary: ")
+        query = f'''
+            UPDATE Income_Details
+            SET Salary_Income = "{Salary}"
+            WHERE Acknowledgement_Number = "{Ack_no}"
+        '''
+
+        try:
+            db_query(query)
+            print(colored("Salary updated successfully.", "green"))
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
