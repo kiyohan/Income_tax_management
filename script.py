@@ -186,7 +186,7 @@ while True:
             '''
 
             query2 = f'''
-                INSERT INTO Company_Assessee (PAN, Company_Name, Registration_Number, Date_of_Incorporation)
+                INSERT INTO Corporate_Assessee (PAN, Company_Name, Registration_Number, Date_of_Incorporation)
                 VALUES ("{PAN}", "{Company_Name}", "{Registration_Number}", "{Incorporation_Date}")
             '''
 
