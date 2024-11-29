@@ -149,7 +149,10 @@ while True:
             Address = input("  Address: ")
             Phone = input("  Phone: ")
             Filing_Status = input("  Filing Status: ")
-            Representative_PAN = input("  Representative PAN: ")
+            
+            ans = input('Are you representative of any other assessee? enter Y/N :')
+            if ans == 'Y':
+                Representative_PAN = input("  Representative PAN: ")
 
             FirstName = input("  First Name: ")
             MiddleName = input("  Middle Name: ")
@@ -158,11 +161,17 @@ while True:
             Gender = input("Gender: ")
             Residence_Status = input("Residence Status: ")
             Aadhar = input("Aadhar Number: ")
-
-            query = f'''
-                INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
-                VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}", "{Representative_PAN}")
-            '''
+            
+            if ans == 'Y':
+                query = f'''
+                    INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
+                    VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}", "{Representative_PAN}")
+                '''
+            else:
+                query = f'''
+                    INSERT INTO Assessee (PAN, Address, Phone, Filing_Status)
+                    VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}")
+                '''
 
             query2 = f'''
                 INSERT INTO Individual_Assessee (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Residency_Status, Aadhar_Number)
