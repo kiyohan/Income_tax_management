@@ -140,18 +140,62 @@ while True:
 
     elif query == 'insert_assessee':
         print(colored("Enter the following details to insert a new assessee:", "cyan"))
-        PAN = input("  PAN: ")
-        Address = input("  Address: ")
-        Phone = input("  Phone: ")
-        Filing_Status = input("  Filing Status: ")
-        Representative_PAN = input("  Representative PAN: ")
-        query = f'''
-            INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
-            VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}", "{Representative_PAN}")
-        '''
+        is_individual = input("Enter 'Y' for individual and 'N' for company: ")
+        if is_individual == 'Y':
+            PAN = input("  PAN: ")
+            Address = input("  Address: ")
+            Phone = input("  Phone: ")
+            Filing_Status = input("  Filing Status: ")
+            Representative_PAN = input("  Representative PAN: ")
+
+            FirstName = input("  First Name: ")
+            MiddleName = input("  Middle Name: ")
+            LastName = input("  Last Name: ")
+            DOB = input("  Date of Birth: ")
+            Gender = input("Gender: ")
+            Residence_Status = input("Residence Status: ")
+            Aadhar = input("Aadhar Number: ")
+
+            query = f'''
+                INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
+                VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}", "{Representative_PAN}")
+            '''
+
+            query2 = f'''
+                INSERT INTO Individual_Assessee (PAN, FirstName, MiddleName, LastName, DOB, Gender, Residency_Status, Aadhar_Number)
+                VALUES ("{PAN}", "{FirstName}", "{MiddleName}", "{LastName}", "{DOB}", "{Gender}", "{Residence_Status}", "{Aadhar}")
+            '''
+
+        if is_individual == 'N':
+            PAN = input("  PAN: ")
+            Address = input("  Address: ")
+            Phone = input("  Phone: ")
+            Filing_Status = input("  Filing Status: ")
+            Representative_PAN = input("  Representative PAN: ")
+
+            Company_Name = input("  Company Name: ")
+            Registration_Number = input("  Registration Number: ")
+            Incorporation_Date = input("  Incorporation Date: ")
+
+            query = f'''
+                INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN)
+                VALUES ("{PAN}", "{Address}", "{Phone}", "{Filing_Status}", "{Representative_PAN}")
+            '''
+
+            query2 = f'''
+                INSERT INTO Company_Assessee (PAN, Company_Name, Registration_Number, Date_of_Incorporation)
+                VALUES ("{PAN}", "{Company_Name}", "{Registration_Number}", "{Incorporation_Date}")
+            '''
+
         try:
             db_query(query)
             print(colored("Assessee inserted successfully.", "green"))
+        except Exception as e:
+            print(colored(f"Error: {e}", "red"))
+
+        try:
+            db_query(query2)
+            print(colored("Individual/ Corporate Assessee inserted successfully.", "green"))
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
@@ -240,21 +284,27 @@ while True:
             print(colored(f"Error: {e}", "red"))
 
     elif query == 'insert_ITR':
-        print(colored("Enter the following details to insert a new ITR:", "cyan"))
-        Acknowledgement_No = input("  Acknowledgement No: ")
-        PAN = input("  PAN: ")
-        Age = input("  Age: ")
-        Tax_Payer_Category = input("  Tax Payer Category(Individual/Corporate): ")
-        Submission_Date = input("  Submission Date: ")
-        Regime = input("  Regime: ")
-        Due_Date = input("  Due Date: ")
-        Start_Year = input("  Start Year: ")
-        End_Year = input("  End Year: ")
-        Total_Tax_Paid = input("  Total Tax Paid: ")
+        print('Enter the following details')
+        Acknowledgement_no = input('Acknowledgement_no: ')
+        PAN = input('PAN: ')
+        Tax_Payer_Category = input('Tax_Payer_Category: ')
+        Submission_date = input('Submission_date: ')
+        Regime = input('Regime: ')
+        Due_date = input('Due_date: ')
+        Start_Year = input('Start_Year: ')
+        Total_Taxable_Income = input('Total_Taxable_Income: ')
+        Total_Tax_Paid = input('Total_Tax_Paid: ')
+        age_query = f'SELECT YEAR(CURDATE()) - YEAR(dob) - (RIGHT(CURDATE(), 5) < RIGHT(dob, 5)) FROM Individual_Assessee WHERE PAN = "{PAN}"'
+        age_result = db_query(age_query)
+        Age = age_result[0][0] if age_result else None
+        if Age is None:
+            print('Error: PAN not found in Individual_Assessee table')
+            continue
         query = f'''
-            INSERT INTO ITR (Acknowledgement_No, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year, Total_Tax_Paid)
-            VALUES ("{Acknowledgement_No}", "{PAN}", "{Age}", "{Tax_Payer_Category}", "{Submission_Date}", "{Regime}", "{Due_Date}", "{Start_Year}", "{End_Year}", "{Total_Tax_Paid}")
+            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Taxable_Income, Total_Tax_Paid, Status)
+            VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{Total_Taxable_Income}", "{Total_Tax_Paid}", "Pending")
         '''
+        
         try:
             db_query(query)
             print(colored("ITR inserted successfully.", "green"))
