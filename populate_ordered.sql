@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS Assessee (
     Phone VARCHAR(15),
     Filing_Status VARCHAR(20),
     Representative_PAN VARCHAR(15),
-    FOREIGN KEY (Representative_PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (Representative_PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
 );
 
 -- Individual Assessee Subclass
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS Individual_Assessee (
     Gender CHAR(1),
     Residency_Status VARCHAR(20),
     Aadhar_Number VARCHAR(12) UNIQUE,
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
 );
 
 -- Corporate Assessee Subclass
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS Corporate_Assessee (
     Company_Name VARCHAR(255),
     Registration_Number VARCHAR(50) UNIQUE,
     Date_of_Incorporation DATE,
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
 );
 
 -- Assessee Bank Details
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS Assessee_Bank_Details (
     Account_Holder_Name VARCHAR(255),
     Bank_Address VARCHAR(255),
     IFSC VARCHAR(11),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
 );
 
 -- Non-Assessee with PAN
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS Non_Assessee_with_PAN (
 CREATE TABLE IF NOT EXISTS Non_Assessee_Bank_Details (
     Bank_Account_Number VARCHAR(20) PRIMARY KEY,
     PAN VARCHAR(15),
-    FOREIGN KEY (PAN) REFERENCES Non_Assessee_with_PAN(PAN)
+    FOREIGN KEY (PAN) REFERENCES Non_Assessee_with_PAN(PAN) ON DELETE CASCADE
 );
 
 -- Bank Transactions Table
@@ -112,8 +112,8 @@ CREATE TABLE IF NOT EXISTS Transactions_Involving_Assessee (
 CREATE TABLE IF NOT EXISTS Transactions_Involving_Non_Assessee (
     Transaction_Number INT PRIMARY KEY,
     Bank_Account_Number VARCHAR(20),
-    FOREIGN KEY (Transaction_Number) REFERENCES Bank_Transactions(Transaction_ID),
-    FOREIGN KEY (Bank_Account_Number) REFERENCES Non_Assessee_Bank_Details(Bank_Account_Number)
+    FOREIGN KEY (Transaction_Number) REFERENCES Bank_Transactions(Transaction_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Bank_Account_Number) REFERENCES Non_Assessee_Bank_Details(Bank_Account_Number) ON DELETE CASCADE
 );
 
 -- TDS Table
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS Goods (
     TCS_Certificate_Number INT,
     Goods_Type VARCHAR(50),
     PRIMARY KEY (TCS_Certificate_Number, Goods_Type),
-    FOREIGN KEY (TCS_Certificate_Number) REFERENCES TCS(TCS_Certificate_Number)
+    FOREIGN KEY (TCS_Certificate_Number) REFERENCES TCS(TCS_Certificate_Number) ON DELETE CASCADE
 );
 
 -- Corresponding Year Table
@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS ITR (
     Total_Taxable_Income DECIMAL(15, 2) DEFAULT 0.00,
     Total_Tax_Paid DECIMAL(15, 2)   DEFAULT 0.00,
     Status VARCHAR(20),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
     -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS Corresponding_Slabs (
     Slab_ID INT,
     Amount DECIMAL(15, 2) DEFAULT 0.00,
     PRIMARY KEY (Acknowledgement_Number, Slab_ID),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number) ON DELETE CASCADE
     -- FOREIGN KEY (Slab_ID) REFERENCES Slabs(Slab_ID)
 );
 
@@ -213,8 +213,8 @@ CREATE TABLE IF NOT EXISTS Income_Details (
     Other_Income_Total DECIMAL(15, 2) DEFAULT 0.00,
     Total_income DECIMAL(15, 2) DEFAULT 0.00, -- salary_income + business_income + capital_gain + house_property_income + agriculture_income + other_income_total
     PRIMARY KEY (Acknowledgement_Number),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number),
-    FOREIGN KEY (PAN) REFERENCES Assessee(PAN)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number) ON DELETE CASCADE,
+    FOREIGN KEY (PAN) REFERENCES Assessee(PAN) ON DELETE CASCADE
     -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS Other_Income (
     Acknowledgement_Number INT,
     Income_source VARCHAR(100),
     PRIMARY KEY (Acknowledgement_Number, Income_source),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES Income_Details(Acknowledgement_Number)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES Income_Details(Acknowledgement_Number) ON DELETE CASCADE
 );
 
 -- Deduction Limit Table
@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS Deduction (
     Deduction_Amount DECIMAL(15, 2) DEFAULT 0.00,
     PRIMARY KEY (Acknowledgement_Number, Deduction_Type),
     -- FOREIGN KEY (Acknowledgement_Number) REFERENCES Deduction_period(Acknowledgement_Number),
-    FOREIGN KEY (Deduction_Type) REFERENCES Deduction_limit(Deduction_Type)
+    FOREIGN KEY (Deduction_Type) REFERENCES Deduction_limit(Deduction_Type) ON DELETE CASCADE
 );
 
 -- Sections Table
@@ -258,8 +258,8 @@ CREATE TABLE IF NOT EXISTS Sections (
     Deduction_Type VARCHAR(50),
     Section_Code VARCHAR(10),
     PRIMARY KEY (Acknowledgement_Number, Deduction_Type),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES Deduction(Acknowledgement_Number),
-    FOREIGN KEY (Deduction_Type) REFERENCES Deduction(Deduction_Type)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES Deduction(Acknowledgement_Number) ON DELETE CASCADE,
+    FOREIGN KEY (Deduction_Type) REFERENCES Deduction(Deduction_Type) ON DELETE CASCADE
 );
 
 -- Tax Verification Table
@@ -274,7 +274,7 @@ CREATE TABLE IF NOT EXISTS Tax_Verification (
     Tax_Amount DECIMAL(15, 2)   DEFAULT 0.00,
     Tax_Paid DECIMAL(15, 2) DEFAULT 0.00,
     IFSC_Code VARCHAR(11),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES ITR(Acknowledgement_Number) ON DELETE CASCADE
     -- FOREIGN KEY (Start_Year) REFERENCES Corresponding_year(Start_Year)
 );
 
@@ -283,7 +283,7 @@ CREATE TABLE IF NOT EXISTS Refund_details (
     Acknowledgement_Number INT PRIMARY KEY,
     Refund_amount DECIMAL(15, 2) DEFAULT 0.00,
     Refund_status VARCHAR(20),
-    FOREIGN KEY (Acknowledgement_Number) REFERENCES Tax_Verification(Acknowledgement_Number)
+    FOREIGN KEY (Acknowledgement_Number) REFERENCES Tax_Verification(Acknowledgement_Number) ON DELETE CASCADE
 );
 
 
