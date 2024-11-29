@@ -1,9 +1,4 @@
--- Effective_Timeline
--- INSERT INTO Effective_Timeline (Effective_from, Effective_to) VALUES
--- ('2022-04-01', '2023-03-31'),
--- ('2023-04-01', '2024-03-31');
-
--- -- Slab_range
+-- Slab_range
 -- INSERT INTO Slab_range (Minimum_Income, Maximum_Income) VALUES
 -- (0.00, 250000.00),
 -- (250001.00, 500000.00),
@@ -12,10 +7,11 @@
 
 -- Slabs
 INSERT INTO Slabs (Slab_ID, Minimum_Income, Maximum_Income, Tax_Rate, CESS_Rate, Effective_from,Effective_to) VALUES
-(1, 0.00, 250000.00,0.00, 0.00, 2022,2023),
-(2, 250001.00, 500000.00,5.00, 4.00, 2022,2023),
-(3, 500001.00, 1000000.00,10.00, 4.00,2022,2023),
-(4, 1000001.00, 1500000.00,20.00, 4.00, 2022,2023);
+(1, 0.00, 250000.00,0.00, 0.00, 2022, 2023),
+(2, 250001.00, 500000.00, 5.00, 1.00, 2022, 2023),
+(3, 500001.00, 1000000.00, 10.00, 2.00, 2022, 2023),
+(4, 1000001.00, float('inf'), 20.00, 4.00, 2022, 2023);
+
 -- Assessee
 INSERT INTO Assessee (PAN, Address, Phone, Filing_Status, Representative_PAN) VALUES
 ('ABCDE1234F', '123 Main St, City', '1234567890', 'Filed', NULL),
@@ -40,13 +36,13 @@ INSERT INTO Assessee_Bank_Details (Bank_Account_Number, PAN, Account_Holder_Name
 
 -- Non_Assessee_with_PAN
 INSERT INTO Non_Assessee_with_PAN (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Address, Contact_Number, Residency_Status, Aadhar_Number, Is_tax_defaulter) VALUES
-('NOPQR1234S', 'David', 'Andrew', 'Brown', '1980-12-20', 'M', '789 Side Lane, City', '6677889900', 'Resident', '345678901234', FALSE),
-('NONPAN1234', 'John',NULL, 'Doe','1900-10-19','M','123 Tax Lane', '9876543210','NRI',4242252424, FALSE);
+('NONPQR1234', 'David', 'Andrew', 'Brown', '1980-12-20', 'M', '789 Side Lane, City', '6677889900', 'Resident', '345678901234', FALSE),
+('NONPAN1234', 'Spider',NULL, 'Man','1900-10-19','M','123 Tax Lane', '9876543210','NRI','424225242458', FALSE);
 
 -- Non_Assessee_Bank_Details
 INSERT INTO Non_Assessee_Bank_Details (Bank_Account_Number, PAN) VALUES
-('777788889999', 'NOPQR1234S'),
-('ACC123456', 'NONPAN1234');
+('ACC788889999', 'NOPQR1234S'),
+('ACC123456789', 'NONPAN1234');
 
 -- Bank_Transactions
 INSERT INTO Bank_Transactions (Transaction_ID, Transaction_Type, Sender_Account_Number, Receiver_Account_Number, Transaction_Amount) VALUES
@@ -76,21 +72,18 @@ INSERT INTO Goods (TCS_Certificate_Number, Goods_Type) VALUES
 (2001, 'Electronics'),
 (2001, 'Furniture');
 
--- INSERT INTO Corresponding_year (Start_Year, End_Year) VALUES
--- (2022, 2023),
--- (2023, 2024);
-
 -- ITR
 INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year,Total_Taxable_Income, Total_Tax_Paid, Status) VALUES
 (3001, 'ABCDE1234F', 33, 'Individual', '2022-07-01', 'New', '2023-07-31', 2022,2023, 1000000.00, 105000.00, 'Processed');
 
 -- Is_penaliser
--- INSERT INTO Is_penaliser (Penalty, PAN) VALUES
--- (500.00, 'ABCDE1234F');
+INSERT INTO Is_penaliser (Penalty, PAN) VALUES
+(500.00, 'ABCDE1234F');
 
 -- Corresponding_Slabs
--- INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID) VALUES
--- (3001, 3);
+INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID, Amount) VALUES
+(3001, 3, 500000.00),
+(3001, 4, 500000.00);
 
 -- Income_Details
 INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,End_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
@@ -106,10 +99,6 @@ INSERT INTO Deduction_limit (Deduction_Type, Max_allowable_limit) VALUES
 ('80C', 150000.00),
 ('80D', 25000.00);
 
--- -- Deduction_period
--- INSERT INTO Deduction_period (Acknowledgement_Number, PAN, Start_Year) VALUES
--- (3001, 'ABCDE1234F', 2022);
-
 -- Deduction
 INSERT INTO Deduction (Acknowledgement_Number, Deduction_Type, Deduction_Amount) VALUES
 (3001, '80C', 100000.00),
@@ -121,12 +110,12 @@ INSERT INTO Sections (Acknowledgement_Number, Deduction_Type, Section_Code) VALU
 (3001, '80D', '80D');
 
 -- Tax_Verification
--- INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
--- (3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 105000.00, 'IFSC001');
+INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
+(3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 115000.00, 'IFSC001');
 
 -- Refund_details
--- INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
--- (3001, 0.00, 'No Refund');
+INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
+(3001, 10000.00, 'Pending');
 
 DELIMITER $$
 
