@@ -49,6 +49,7 @@ def get_user_role(username):
 # Print the help menu
 def print_help(role):
     admin_commands = [
+        ("execute_custom_sql", "Execute a custom SQL query"),
         ("insert_ITR", "Insert a new ITR"),
         ("insert_assessee", "Insert a new assessee"),
         ("insert_slabs", "Insert into slabs table"),
@@ -133,7 +134,7 @@ while True:
         break
 
     # Only Admins can execute restricted queries
-    if role != "Admin" and query in {'insert_slabs', 'update_tax_rate', 'delete_assessee', 'delete_tds', 'find_highest_tax_income'}:
+    if role != "Admin" and query in {'insert_slabs', 'update_tax_rate', 'delete_assessee', 'delete_tds', 'find_highest_tax_income', 'execute_custom_sql'}:
         print(colored("You do not have permission to execute this query.", "red"))
         continue
 
@@ -304,7 +305,7 @@ while True:
             INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Taxable_Income, Total_Tax_Paid, Status)
             VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{Total_Taxable_Income}", "{Total_Tax_Paid}", "Pending")
         '''
-        
+
         try:
             db_query(query)
             print(colored("ITR inserted successfully.", "green"))
@@ -347,6 +348,17 @@ while True:
             print(colored("TDS record deleted successfully.", "green"))
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
+
+    elif query == 'execute_custom_sql' and is_admin:
+        print(colored("Enter your custom SQL query:", "cyan"))
+        custom_sql = input("SQL Query: ")
+        try:
+            data, headers = db_query(custom_sql)
+            print(colored("Query executed successfully.", "green"))
+            print(colored("Results:", "cyan"))
+            display_table(data, headers)
+        except Exception as e:
+            print(colored(f"Error executing query: {e}", "red"))
     
 
     else:
