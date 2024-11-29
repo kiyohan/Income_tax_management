@@ -229,15 +229,18 @@ CREATE TRIGGER after_tax_verification_insert
 AFTER INSERT ON Tax_Verification
 FOR EACH ROW
 BEGIN
-    INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status)
-    VALUES (
-        NEW.Acknowledgement_Number,
-        ABS(NEW.Tax_Paid - NEW.Tax_Amount),
-        'Pending' 
-    );
+    IF NEW.Tax_Paid > NEW.Tax_Amount THEN
+        INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status)
+        VALUES (
+            NEW.Acknowledgement_Number,
+            ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+            'Pending' 
+        );
+    END IF;
 END$$
 
 DELIMITER ;
+
 
 DELIMITER $$
 -- UPDATE TRIGGER FOR TAX VERIFICATION
@@ -245,15 +248,16 @@ CREATE TRIGGER after_tax_verification_update
 AFTER UPDATE ON Tax_Verification
 FOR EACH ROW
 BEGIN
-    IF NEW.Acknowledgement_Number = OLD.Acknowledgement_Number THEN
-        UPDATE Refund_details
-        SET Refund_amount = ABS(NEW.Tax_Paid - NEW.Tax_Amount),
-            Refund_status = 'Pending' 
-        WHERE Acknowledgement_Number = NEW.Acknowledgement_Number;
+    IF NEW.Tax_Paid > NEW.Tax_Amount AND (NEW.Tax_Paid != OLD.Tax_Paid OR NEW.Tax_Amount != OLD.Tax_Amount) THEN
+        INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status)
+        VALUES (
+            NEW.Acknowledgement_Number,
+            ABS(NEW.Tax_Paid - NEW.Tax_Amount),
+            'Pending' 
+        );
     END IF;
 END$$
 
--- Reset the delimiter back to the default
 DELIMITER ;
 
 DELIMITER $$
