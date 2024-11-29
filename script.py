@@ -295,6 +295,7 @@ while True:
         Regime = input('Regime: ')
         Due_date = input('Due_date(YYYY-MM-DD): ')
         Start_Year = input('Start_Year: ')
+        End_Year = input('End_Year: ')
         Total_Tax_Paid = input('Total_Tax_Paid: ')
         age_query = f'SELECT YEAR(CURDATE()) - YEAR(dob) - (RIGHT(CURDATE(), 5) < RIGHT(dob, 5)) FROM Individual_Assessee WHERE PAN = "{PAN}"'
         age_result = db_query(age_query)
@@ -303,8 +304,8 @@ while True:
             print('Error: PAN not found in Individual_Assessee table')
             continue
         query = f'''
-            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Tax_Paid, Status)
-            VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{Total_Tax_Paid}", "Pending")
+            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, End_Year Total_Tax_Paid, Status)
+            VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{End_Year}", "{Total_Tax_Paid}", "Pending")
         '''
 
         try:
