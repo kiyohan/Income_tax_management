@@ -165,7 +165,7 @@ while True:
             '''
 
             query2 = f'''
-                INSERT INTO Individual_Assessee (PAN, FirstName, MiddleName, LastName, DOB, Gender, Residency_Status, Aadhar_Number)
+                INSERT INTO Individual_Assessee (PAN, First_Name, Middle_Name, Last_Name, DOB, Gender, Residency_Status, Aadhar_Number)
                 VALUES ("{PAN}", "{FirstName}", "{MiddleName}", "{LastName}", "{DOB}", "{Gender}", "{Residence_Status}", "{Aadhar}")
             '''
 
