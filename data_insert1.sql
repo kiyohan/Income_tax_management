@@ -89,8 +89,8 @@ INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submissio
 -- (500.00, 'ABCDE1234F');
 
 -- Corresponding_Slabs
-INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID) VALUES
-(3001, 3);
+-- INSERT INTO Corresponding_Slabs (Acknowledgement_Number, Slab_ID) VALUES
+-- (3001, 3);
 
 -- Income_Details
 INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year,End_Year,Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total) VALUES
@@ -121,12 +121,12 @@ INSERT INTO Sections (Acknowledgement_Number, Deduction_Type, Section_Code) VALU
 (3001, '80D', '80D');
 
 -- Tax_Verification
-INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
-(3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 105000.00, 'IFSC001');
+-- INSERT INTO Tax_Verification (Acknowledgement_Number, Bank_Account_Number, Status, Start_Year,End_Year, Requested_Date, Processed_Date, Tax_Amount, Tax_Paid, IFSC_Code) VALUES
+-- (3001, '111122223333', 'Completed', 2022,2023, '2022-08-01', '2022-08-05', 105000.00, 105000.00, 'IFSC001');
 
 -- Refund_details
-INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
-(3001, 0.00, 'No Refund');
+-- INSERT INTO Refund_details (Acknowledgement_Number, Refund_amount, Refund_status) VALUES
+-- (3001, 0.00, 'No Refund');
 
 DELIMITER $$
 
@@ -349,6 +349,7 @@ BEGIN
     INTO bankaccountnumber, ifsccode
     FROM Assessee_Bank_Details
     WHERE PAN = pan_card;
+    DELETE FROM Tax_Verification WHERE Acknowledgement_Number = ack_no;
 
     -- Insert data into Tax_Verification table
     INSERT INTO Tax_Verification (
@@ -382,6 +383,11 @@ BEGIN
         SET total_tax = total_tax + penalties;
     END IF;
 
+    IF taxpaid < total_tax THEN
+        -- Calculate penalties if the condition is true
+        SET penalties = 0.005 * total_tax + total_tax - taxpaid;
+    END IF;
+
 
     INSERT INTO Is_penaliser(Acknowledgement_Number, Penalty,PAN)
     VALUES (ack_no,penalties,pan_card);
@@ -391,9 +397,9 @@ BEGIN
     SET Total_Taxable_Income = total_tax
     WHERE Acknowledgement_Number = ack_no;
     -- Display the acknowledgment number and total tax
-    SELECT 
-        ack_no AS Acknowledgement_Number,  
-        total_tax AS Total_Tax;
+    -- SELECT 
+    --     ack_no AS Acknowledgement_Number,  
+    --     total_tax AS Total_Tax;
 END$$
 
 DELIMITER ;
@@ -460,3 +466,183 @@ DELIMITER ;
 -- (6, 'ACC123456'),
 -- (7, 'ACC123456');
 
+
+DELIMITER $$
+
+CREATE TRIGGER after_insert_Income_Details
+AFTER INSERT ON Income_Details
+FOR EACH ROW
+BEGIN
+    CALL calculate_total_tax(NEW.Acknowledgement_Number);
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_Income_Details
+AFTER UPDATE ON Income_Details
+FOR EACH ROW
+BEGIN
+    CALL calculate_total_tax(NEW.Acknowledgement_Number);
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER after_insert_Deduction
+AFTER INSERT ON Deduction
+FOR EACH ROW
+BEGIN
+    CALL calculate_total_tax(NEW.Acknowledgement_Number);
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_Deduction
+AFTER UPDATE ON Deduction
+FOR EACH ROW
+BEGIN
+    CALL calculate_total_tax(NEW.Acknowledgement_Number);
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER after_insert_Slabs
+AFTER INSERT ON Slabs
+FOR EACH ROW
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE ack_no INT;
+    DECLARE ack_cursor CURSOR FOR SELECT Acknowledgement_Number FROM ITR;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN ack_cursor;
+
+    read_loop: LOOP
+        FETCH ack_cursor INTO ack_no;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Call calculate_total_tax for each acknowledgment number
+        CALL calculate_total_tax(ack_no);
+    END LOOP;
+
+    CLOSE ack_cursor;
+END$$
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_Slabs
+AFTER UPDATE ON Slabs
+FOR EACH ROW
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE ack_no INT;
+    DECLARE ack_cursor CURSOR FOR SELECT Acknowledgement_Number FROM ITR;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN ack_cursor;
+
+    read_loop: LOOP
+        FETCH ack_cursor INTO ack_no;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Call calculate_total_tax for each acknowledgment number
+        CALL calculate_total_tax(ack_no);
+    END LOOP;
+
+    CLOSE ack_cursor;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE TRIGGER after_insert_TCS
+AFTER INSERT ON TCS
+FOR EACH ROW
+BEGIN
+    DECLARE ack_no INT;
+
+    -- Fetch Acknowledgement_Number from ITR based on PAN from TCS
+    SELECT Acknowledgement_Number
+    INTO ack_no
+    FROM ITR
+    WHERE PAN = NEW.PAN;
+
+    IF ack_no IS NOT NULL THEN
+        CALL calculate_total_tax(ack_no);
+    END IF;
+END$$
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_TCS
+AFTER UPDATE ON TCS
+FOR EACH ROW
+BEGIN
+    DECLARE ack_no INT;
+
+    -- Fetch Acknowledgement_Number from ITR based on PAN from TCS
+    SELECT Acknowledgement_Number
+    INTO ack_no
+    FROM ITR
+    WHERE PAN = NEW.PAN;
+
+    IF ack_no IS NOT NULL THEN
+        CALL calculate_total_tax(ack_no);
+    END IF;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER after_insert_TDS
+AFTER INSERT ON TDS
+FOR EACH ROW
+BEGIN
+    DECLARE ack_no INT;
+
+    -- Fetch Acknowledgement_Number from ITR based on PAN from TDS
+    SELECT Acknowledgement_Number
+    INTO ack_no
+    FROM ITR
+    WHERE PAN = NEW.PAN;
+
+    IF ack_no IS NOT NULL THEN
+        CALL calculate_total_tax(ack_no);
+    END IF;
+END$$
+
+DELIMITER $$
+
+CREATE TRIGGER after_update_TDS
+AFTER UPDATE ON TDS
+FOR EACH ROW
+BEGIN
+    DECLARE ack_no INT;
+
+    -- Fetch Acknowledgement_Number from ITR based on PAN from TDS
+    SELECT Acknowledgement_Number
+    INTO ack_no
+    FROM ITR
+    WHERE PAN = NEW.PAN;
+
+    IF ack_no IS NOT NULL THEN
+        CALL calculate_total_tax(ack_no);
+    END IF;
+END$$
+
+DELIMITER ;
