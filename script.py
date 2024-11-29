@@ -53,6 +53,7 @@ def print_help(role):
         ("insert_ITR", "Insert a new ITR"),
         ("insert_assessee", "Insert a new assessee"),
         ("insert_slabs", "Insert into slabs table"),
+        ("insert_income_details", "Insert a new income details"),
         ("update_address", "Update an assessee's address"),
         ("update_tax_rate", "Update tax rate in slabs table"),
         ("update_salary", "Updates an assessee's salary."),
@@ -67,6 +68,7 @@ def print_help(role):
     user_commands = [
         ("insert_assessee", "Insert a new assessee"),
         ("insert_ITR", "Insert a new ITR"),
+        ("insert_income_details", "Insert a new income details"),
         ("retrieve_slabs", "Retrieve all slabs with tax and CESS rates"),
         ("retrieve_transactions", "Retrieve transactions for a specific assessee"),
         ("update_address", "Update an assessee's address"),
@@ -293,7 +295,6 @@ while True:
         Regime = input('Regime: ')
         Due_date = input('Due_date: ')
         Start_Year = input('Start_Year: ')
-        Total_Taxable_Income = input('Total_Taxable_Income: ')
         Total_Tax_Paid = input('Total_Tax_Paid: ')
         age_query = f'SELECT YEAR(CURDATE()) - YEAR(dob) - (RIGHT(CURDATE(), 5) < RIGHT(dob, 5)) FROM Individual_Assessee WHERE PAN = "{PAN}"'
         age_result = db_query(age_query)
@@ -302,13 +303,54 @@ while True:
             print('Error: PAN not found in Individual_Assessee table')
             continue
         query = f'''
-            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Taxable_Income, Total_Tax_Paid, Status)
-            VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{Total_Taxable_Income}", "{Total_Tax_Paid}", "Pending")
+            INSERT INTO ITR (Acknowledgement_Number, PAN, Age, Tax_Payer_Category, Submission_Date, Regime, Due_Date, Start_Year, Total_Tax_Paid, Status)
+            VALUES ("{Acknowledgement_no}", "{PAN}", {Age}, "{Tax_Payer_Category}", "{Submission_date}", "{Regime}", "{Due_date}", "{Start_Year}", "{Total_Tax_Paid}", "Pending")
         '''
 
         try:
             db_query(query)
             print(colored("ITR inserted successfully.", "green"))
+        except Exception as e:
+            print(colored(f"Error: {e}", "red"))
+
+    elif query == 'insert_income_details':
+        print('Enter the following details')
+        Acknowledgement_no = input('Acknowledgement_no: ')
+        PAN = input('PAN: ')
+        Start_Year = input('Start_Year: ')
+        End_Year = input('End_Year: ')
+        Salary_Income = input('Salary_Income: ')
+        Business_Income = input('Business_Income: ')
+        Capital_Gain = input('Capital_Gains: ')
+        House_Property_Income = input('House_Property_Income: ')
+        Agriculture_Income = input('Agriculture_Income: ')
+        Other_Incomes = input("Whether any other income? (Y/N): ")
+        if Other_Incomes == 'N':
+            Other_Income_Total = 0
+        elif Other_Incomes == 'Y':
+            Other_Income_Total = input('Other_Income_Total: ')
+        
+        query = f'''
+            INSERT INTO Income_Details (Acknowledgement_Number, PAN, Start_Year, End_Year, Salary_Income, Business_Income, Capital_Gain, House_Property_Income, Agriculture_Income, Other_Income_Total)
+            VALUES ("{Acknowledgement_no}", "{PAN}", "{Start_Year}", "{End_Year}", "{Salary_Income}", "{Business_Income}", "{Capital_Gain}", "{House_Property_Income}", "{Agriculture_Income}", "{Other_Income_Total}")
+        '''
+
+        if Other_Incomes == 'Y':
+            Other_Income = input('Other_Income: ')
+            query2 = f'''
+                INSERT INTO Other_Income (Acknowledgement_Number, Income_source)
+                VALUES ("{Acknowledgement_no}", "{Other_Income}")
+            '''
+
+        try:
+            db_query(query)
+            print(colored("Income Details inserted successfully.", "green"))
+        except Exception as e:
+            print(colored(f"Error: {e}", "red"))
+
+        try:    
+            db_query(query2)
+            print(colored("Other Income Details inserted successfully.", "green"))
         except Exception as e:
             print(colored(f"Error: {e}", "red"))
 
