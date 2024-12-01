@@ -42,7 +42,9 @@ The Income Tax Management CLI is a command-line interface tool designed to manag
 
 2. **Import the database**:
     ```sh
-    mysql -u your_username -p < dump.sql
+    mysql -u your_username -p 
+    source <path to populate_ordered.sql>
+    source <path to data_insert1.sql>
     ```
 
 3. **Run the script**:
